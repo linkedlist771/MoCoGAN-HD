@@ -4,6 +4,7 @@ services:
     image:  cog-image:v1 #nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
     container_name: mocogan-container
     network_mode: "host"    # 添加这行来使用主机网络
+    command: tail -f /dev/null
     volumes:
       - ./:/workspace
     deploy:
