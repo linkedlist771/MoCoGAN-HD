@@ -10,6 +10,7 @@ import os
 
 import torch
 from torchvision.io import write_video
+from torchvision.utils import save_image
 
 from options.test_options import TestOptions
 from models.models import create_model
@@ -25,6 +26,21 @@ def test():
     z = torch.FloatTensor(1, opt.latent_dimension)
     z = z.cuda()
 
+    # def create_and_save(z, modelG, opt, use_noise, prefix):
+    #     x_fake, _, _ = modelG(styles=[z],
+    #                           n_frame=opt.n_frames_G,
+    #                           use_noise=use_noise,
+    #                           interpolation=opt.interpolation)
+    #     x_fake = x_fake.view(1, -1, 3, opt.style_gan_size,
+    #                          opt.style_gan_size).data
+    #     x_fake = x_fake.clamp(-1, 1)
+    #
+    #     video = x_fake[0].cpu()
+    #     video = ((video + 1.) / 2. * 255).type(torch.uint8).permute(0, 2, 3, 1)
+    #     write_video(os.path.join(opt.results_dir, prefix + '.mp4'),
+    #                 video,
+    #                 fps=opt.fps)
+
     def create_and_save(z, modelG, opt, use_noise, prefix):
         x_fake, _, _ = modelG(styles=[z],
                               n_frame=opt.n_frames_G,
@@ -34,12 +50,17 @@ def test():
                              opt.style_gan_size).data
         x_fake = x_fake.clamp(-1, 1)
 
-        video = x_fake[0].cpu()
-        video = ((video + 1.) / 2. * 255).type(torch.uint8).permute(0, 2, 3, 1)
-        write_video(os.path.join(opt.results_dir, prefix + '.mp4'),
-                    video,
-                    fps=opt.fps)
+        # 创建保存图片的目录
+        save_dir = os.path.join(opt.results_dir, prefix)
+        os.makedirs(save_dir, exist_ok=True)
 
+        # 保存每一帧为单独的图片
+        for i, frame in enumerate(x_fake[0]):
+            # 将像素值从[-1, 1]转换到[0, 1]
+            frame = (frame + 1) / 2
+            save_image(frame, os.path.join(save_dir, f'frame_{i:04d}.png'))
+
+        print(f"Saved {opt.n_frames_G} frames to {save_dir}")
     os.makedirs(opt.results_dir, exist_ok=True)
 
     with torch.no_grad():

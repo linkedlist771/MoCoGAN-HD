@@ -8,4 +8,5 @@ checkpoints/
 data/deposition_data
 pca_stats
 *.tar
+.idea
 pretrained_weights

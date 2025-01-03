@@ -16,7 +16,7 @@ python get_stats_pca.py --batchSize 4000 \
 2. train
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python -W ignore train.py --name ucf_101 \
+CUDA_VISIBLE_DEVICES=3 python -W ignore train.py --name ucf_101 \
   --time_step 2 \
   --lr 0.0001 \
   --save_pca_path pca_stats/ucf_101 \
@@ -25,10 +25,40 @@ CUDA_VISIBLE_DEVICES=0 python -W ignore train.py --name ucf_101 \
   --checkpoints_dir checkpoints \
   --img_g_weights pretrained_weights/ucf-256-fid41.6761-snapshot-006935-generator.pt \
   --multiprocessing_distributed --world_size 1 --rank 0 \
-  --batchSize 16 \
+  --batchSize 8 \
   --workers 1 \
   --style_gan_size 256 \
   --total_epoch 100 
 #   --load_pretrain_path /path/to/checkpoints \
 #   --load_pretrain_epoch 0
   ```
+- nohup type:
+```bash
+
+CUDA_VISIBLE_DEVICES=3  nohup python -W ignore train.py --name ucf_101 \
+  --time_step 2 \
+  --lr 0.0001 \
+  --save_pca_path pca_stats/ucf_101 \
+  --latent_dimension 512 \
+  --dataroot  data/deposition_data \
+  --checkpoints_dir checkpoints \
+  --img_g_weights pretrained_weights/ucf-256-fid41.6761-snapshot-006935-generator.pt \
+  --multiprocessing_distributed --world_size 1 --rank 0 \
+  --batchSize 8 \
+  --workers 1 \
+  --style_gan_size 256 \
+  --total_epoch 100 > $(date +%m_%d).log 2>&1 &
+```
+
+3. inference:
+```bash
+python -W ignore evaluate.py \
+  --save_pca_path pca_stats/ucf_101 \
+  --latent_dimension 512 \
+  --style_gan_size 256 \
+  --img_g_weights checkpoints/ucf_101_25_01_03_07_10_09/modelR_epoch_14.pth \
+  --load_pretrain_path checkpoints/ucf_101_25_01_03_07_10_09 \
+  --load_pretrain_epoch 14 \
+  --results results/ucf_101 \
+  --num_test_videos 10
+```

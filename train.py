@@ -13,6 +13,7 @@ import torch
 import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
@@ -103,11 +104,11 @@ def main_worker(gpu, ngpus_per_node, args):
     total_steps = 0
     train_func.toggle_grad(modelG, False)
 
-    for epoch in range(args.load_pretrain_epoch + 1, args.total_epoch):
+    for epoch in tqdm(range(args.load_pretrain_epoch + 1, args.total_epoch), desc="Epochs"):
         if args.distributed:
             data_loader.train_sampler.set_epoch(epoch)
 
-        for step, data in enumerate(dataset):
+        for step, data in enumerate(tqdm(dataset, desc=f"Epoch {epoch}", leave=False)):
             iter_start_time = time.time()
             total_steps += 1
             loss_all, loss_names = train_func.GD_step(args, modelG, modelD_img,
@@ -145,8 +146,15 @@ def main_worker(gpu, ngpus_per_node, args):
 
 
 def save_models(modelG, modelD_img, modelD_3d, ckpt_dir, string):
+    # 保存modelG，使用与原始加载兼容的格式
+    ckpt = {
+        'g_ema': modelG.state_dict()
+    }
+    torch.save(ckpt, '%s/modelG_%s.pth' % (ckpt_dir, string))
+
     torch.save(modelG.module.modelR.state_dict(),
                '%s/modelR_%s.pth' % (ckpt_dir, string))
+
     torch.save(modelD_img.state_dict(),
                '%s/modelD_img_%s.pth' % (ckpt_dir, string))
     torch.save(modelD_3d.state_dict(),
