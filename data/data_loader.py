@@ -27,7 +27,7 @@ class VideoDatasetDataLoader():
             self.dataset,
             batch_size=opt.batchSize,
             shuffle=(self.train_sampler is None),
-            num_workers=opt.workers,
+            num_workers=2,
             pin_memory=True,
             sampler=self.train_sampler,
             drop_last=True)

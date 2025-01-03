@@ -4,3 +4,8 @@
 results/
 .vscode
 __pycache__
+checkpoints/
+data/deposition_data
+pca_stats
+*.tar
+pretrained_weights

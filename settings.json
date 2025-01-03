@@ -1,0 +1,10 @@
+{
+    "workbench.colorTheme": "One Dark Pro",
+    // Optional: customize specific colors within the theme
+    "workbench.colorCustomizations": {
+        "[One Dark Pro]": {  // Theme-specific overrides
+            "editor.selectionBackground": "#135564",
+            "editor.selectionHighlightBackground": "#135564"
+        }
+    }
+} 

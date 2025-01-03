@@ -8,9 +8,11 @@ In no event will Snap Inc. be liable for any damages or losses of any kind arisi
 """
 import os
 import numpy as np
-
+from loguru import logger
 import torch
 from sklearn.decomposition import IncrementalPCA
+from tqdm import tqdm
+import time
 
 from options.pca_options import PCAOptions
 from models.models import create_model
@@ -24,9 +26,26 @@ class IPCAEstimator():
                                           whiten=self.whiten,
                                           batch_size=max(
                                               100, 2 * n_components))
+        self.fit_time = None
 
     def fit(self, X):
-        self.transformer.fit(X)
+        print(f"Starting PCA fit on data with shape: {X.shape}")
+        start_time = time.time()
+        
+        # If X is large, we can track progress through partial_fit
+        batch_size = self.transformer.batch_size
+        n_samples = X.shape[0]
+        
+        # Use tqdm for progress tracking
+        for i in tqdm(range(0, n_samples, batch_size), 
+                     desc="PCA fitting", 
+                     total=(n_samples + batch_size - 1) // batch_size,
+                     unit="batch"):
+            batch_end = min(i + batch_size, n_samples)
+            self.transformer.partial_fit(X[i:batch_end])
+        
+        self.fit_time = time.time() - start_time
+        print(f"PCA fit completed in {self.fit_time:.2f} seconds")
 
     def get_components(self):
         stdev = np.sqrt(self.transformer.explained_variance_)  # already sorted
@@ -40,11 +59,12 @@ def main():
     pca = IPCAEstimator(n_components=args.latent_dimension)
     z = torch.FloatTensor(args.batchSize, args.latent_dimension)
     if args.gpu is not None:
+        logger.info(f"Using GPU: {args.gpu}")
         z = z.cuda(args.gpu)
 
     style_list = []
     with torch.no_grad():
-        for _ in range(args.pca_iterations):
+        for _ in tqdm(range(args.pca_iterations), desc="Computing PCA", unit="iteration"):
             z.data.normal_()
             styles = modelS(z).data
             style_list.append(styles.cpu().numpy())

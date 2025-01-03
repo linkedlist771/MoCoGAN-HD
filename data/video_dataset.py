@@ -49,12 +49,12 @@ class VideoDataset(data.Dataset):
     def __init__(self, opt):
         self.opt = opt
         self.data_all = self.load_video_frames(opt.dataroot)
+        self.prefetch_factor = 2  # Adjust this value as needed
 
     def __getitem__(self, index):
+        torch.cuda.empty_cache()  # If using GPU
         batch_data = self.getTensor(index)
-        return_list = {'real_img': batch_data}
-
-        return return_list
+        return {'real_img': batch_data}
 
     def getTensor(self, index):
         n_frames = self.opt.n_frames_G
@@ -65,6 +65,7 @@ class VideoDataset(data.Dataset):
         n_frames_interval = n_frames * self.opt.time_step
         start_idx = random.randint(0, video_len - 1 - n_frames_interval)
         img = Image.open(video[0])
+        img = img.convert('RGB') # conver the gray image to rgb
         h, w = img.height, img.width
 
         if h > w:
@@ -79,13 +80,14 @@ class VideoDataset(data.Dataset):
                        self.opt.time_step):
             path = video[i]
             img = Image.open(path)
+            img = img.convert('RGB')
 
             if h != w:
                 img = img.crop(cropsize)
 
             img = img.resize(
                 (self.opt.video_frame_size, self.opt.video_frame_size),
-                Image.ANTIALIAS)
+                Image.Resampling.LANCZOS)
             img = np.asarray(img, dtype=np.float32)
             img /= 255.
             img_tensor = preprocess(img).unsqueeze(0)
