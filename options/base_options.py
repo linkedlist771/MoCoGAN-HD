@@ -100,7 +100,7 @@ class BaseOptions():
         if save:
             self.opt.checkpoints_dir = os.path.join(
                 self.opt.checkpoints_dir,
-                self.opt.name + strftime("_%y_%m_%d_%H_%M_%S", gmtime()))
+                self.opt.name + strftime("_%Y%m%d_%H%M%S", gmtime()))
 
             os.makedirs(self.opt.checkpoints_dir, exist_ok=True)
 

@@ -56,9 +56,9 @@ python -W ignore evaluate.py \
   --save_pca_path pca_stats/ucf_101 \
   --latent_dimension 512 \
   --style_gan_size 256 \
-  --img_g_weights checkpoints/ucf_101_25_01_03_07_10_09/modelR_epoch_14.pth \
-  --load_pretrain_path checkpoints/ucf_101_25_01_03_07_10_09 \
-  --load_pretrain_epoch 14 \
+  --img_g_weights checkpoints/ucf_101_20250103_090743/modelG_epoch_36.pth \
+  --load_pretrain_path checkpoints/ucf_101_20250103_090743 \
+  --load_pretrain_epoch 36 \
   --results results/ucf_101 \
   --num_test_videos 10
 ```
