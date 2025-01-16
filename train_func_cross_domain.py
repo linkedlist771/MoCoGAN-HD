@@ -209,7 +209,7 @@ def G_step(opt, modelG, modelD_img, modelD_3d, x, z):
     z.data.normal_()
 
     x_fake, rand_in, rand_rec = modelG([z], opt.n_frames_G, use_noise=True)
-
+    # 就是随机sample一个
     x_fake = x_fake.view(opt.batchSize, opt.n_frames_G, 3, opt.style_gan_size,
                          opt.style_gan_size)
     kernel_size = int(opt.style_gan_size / opt.video_frame_size)
