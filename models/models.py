@@ -6,6 +6,7 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 import os
 
 import torch
@@ -20,7 +21,7 @@ def load_checkpoints(path, gpu):
     if gpu is None:
         ckpt = torch.load(path)
     else:
-        loc = 'cuda:{}'.format(gpu)
+        loc = "cuda:{}".format(gpu)
         ckpt = torch.load(path, map_location=loc)
     return ckpt
 
@@ -29,9 +30,7 @@ def model_to_gpu(model, opt):
     if opt.isTrain:
         if opt.gpu is not None:
             model.cuda(opt.gpu)
-            model = DDP(model,
-                        device_ids=[opt.gpu],
-                        find_unused_parameters=True)
+            model = DDP(model, device_ids=[opt.gpu], find_unused_parameters=True)
         else:
             model.cuda()
             model = DDP(model, find_unused_parameters=True)
@@ -45,12 +44,12 @@ def model_to_gpu(model, opt):
 def create_model(opt):
     ckpt = load_checkpoints(opt.img_g_weights, opt.gpu)
 
-    modelG = model.Generator(size=opt.style_gan_size,
-                             style_dim=opt.latent_dimension,
-                             n_mlp=opt.n_mlp)
+    modelG = model.Generator(
+        size=opt.style_gan_size, style_dim=opt.latent_dimension, n_mlp=opt.n_mlp
+    )
     # another way: check it out:
     try:
-        modelG.load_state_dict(ckpt['g_ema'], strict=False)
+        modelG.load_state_dict(ckpt["g_ema"], strict=False)
     except Exception as e:
         logger.error(f"load from g_ema failed, try to load directly.")
         modelG.load_state_dict(ckpt, strict=False)
@@ -67,14 +66,16 @@ def create_model(opt):
             modelS.cuda(opt.gpu)
         return modelS
 
-    pca_com_path = os.path.join(opt.save_pca_path, 'pca_comp.npy')
-    pca_stdev_path = os.path.join(opt.save_pca_path, 'pca_stdev.npy')
-    modelR = RNNModule(pca_com_path,
-                       pca_stdev_path,
-                       z_dim=opt.latent_dimension,
-                       h_dim=opt.h_dim,
-                       n_pca=opt.n_pca,
-                       w_residual=opt.w_residual)
+    pca_com_path = os.path.join(opt.save_pca_path, "pca_comp.npy")
+    pca_stdev_path = os.path.join(opt.save_pca_path, "pca_stdev.npy")
+    modelR = RNNModule(
+        pca_com_path,
+        pca_stdev_path,
+        z_dim=opt.latent_dimension,
+        h_dim=opt.h_dim,
+        n_pca=opt.n_pca,
+        w_residual=opt.w_residual,
+    )
 
     if opt.isTrain:
         from .D_3d import ModelD_3d
@@ -93,17 +94,17 @@ def create_model(opt):
         modelD_3d = model_to_gpu(modelD_3d, opt)
         modelD_img = model_to_gpu(modelD_img, opt)
 
-        if opt.load_pretrain_path != 'None' and opt.load_pretrain_epoch > -1:
+        if opt.load_pretrain_path != "None" and opt.load_pretrain_epoch > -1:
             opt.checkpoints_dir = opt.load_pretrain_path
-            m_name = '/modelR_epoch_%d.pth' % (opt.load_pretrain_epoch)
+            m_name = "/modelR_epoch_%d.pth" % (opt.load_pretrain_epoch)
             ckpt = load_checkpoints(opt.load_pretrain_path + m_name, opt.gpu)
             modelG.module.modelR.load_state_dict(ckpt)
 
-            m_name = '/modelD_img_epoch_%d.pth' % (opt.load_pretrain_epoch)
+            m_name = "/modelD_img_epoch_%d.pth" % (opt.load_pretrain_epoch)
             ckpt = load_checkpoints(opt.load_pretrain_path + m_name, opt.gpu)
             modelD_img.load_state_dict(ckpt)
 
-            m_name = '/modelD_3d_epoch_%d.pth' % (opt.load_pretrain_epoch)
+            m_name = "/modelD_3d_epoch_%d.pth" % (opt.load_pretrain_epoch)
             ckpt = load_checkpoints(opt.load_pretrain_path + m_name, opt.gpu)
             modelD_3d.load_state_dict(ckpt)
         return [modelG, modelD_img, modelD_3d]
@@ -114,8 +115,8 @@ def create_model(opt):
         modelG.modelR = modelR
         modelG = model_to_gpu(modelG, opt)
 
-        if opt.load_pretrain_path != 'None' and opt.load_pretrain_epoch > -1:
-            m_name = '/modelR_epoch_%d.pth' % (opt.load_pretrain_epoch)
+        if opt.load_pretrain_path != "None" and opt.load_pretrain_epoch > -1:
+            m_name = "/modelR_epoch_%d.pth" % (opt.load_pretrain_epoch)
             ckpt = load_checkpoints(opt.load_pretrain_path + m_name, opt.gpu)
             modelG.module.modelR.load_state_dict(ckpt)
         return modelG

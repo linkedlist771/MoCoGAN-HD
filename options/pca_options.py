@@ -6,6 +6,7 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 from .base_options import BaseOptions
 
 
@@ -14,16 +15,18 @@ class PCAOptions(BaseOptions):
         BaseOptions.initialize(self)
 
         self.parser.add_argument(
-            '--pca_iterations',
+            "--pca_iterations",
             type=int,
             default=250,
-            help='number of iterations to get latent code')
+            help="number of iterations to get latent code",
+        )
 
         self.parser.add_argument(
-            '--fake_img_size',
+            "--fake_img_size",
             type=int,
             default=512,
-            help='spatial size for the output of generator')
+            help="spatial size for the output of generator",
+        )
 
         self.isTrain = False
         self.isPCA = True

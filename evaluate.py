@@ -6,6 +6,7 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 import os
 
 import torch
@@ -42,12 +43,13 @@ def test():
     #                 fps=opt.fps)
 
     def create_and_save(z, modelG, opt, use_noise, prefix):
-        x_fake, _, _ = modelG(styles=[z],
-                              n_frame=opt.n_frames_G,
-                              use_noise=use_noise,
-                              interpolation=opt.interpolation)
-        x_fake = x_fake.view(1, -1, 3, opt.style_gan_size,
-                             opt.style_gan_size).data
+        x_fake, _, _ = modelG(
+            styles=[z],
+            n_frame=opt.n_frames_G,
+            use_noise=use_noise,
+            interpolation=opt.interpolation,
+        )
+        x_fake = x_fake.view(1, -1, 3, opt.style_gan_size, opt.style_gan_size).data
         x_fake = x_fake.clamp(-1, 1)
 
         # 创建保存图片的目录
@@ -58,23 +60,24 @@ def test():
         for i, frame in enumerate(x_fake[0]):
             # 将像素值从[-1, 1]转换到[0, 1]
             frame = (frame + 1) / 2
-            save_image(frame, os.path.join(save_dir, f'frame_{i:04d}.png'))
+            save_image(frame, os.path.join(save_dir, f"frame_{i:04d}.png"))
 
         print(f"Saved {opt.n_frames_G} frames to {save_dir}")
+
     os.makedirs(opt.results_dir, exist_ok=True)
 
     with torch.no_grad():
         for j in range(opt.num_test_videos):
             z.data.normal_()
-            prefix = opt.name + '_' + str(
-                opt.load_pretrain_epoch) + '_' + str(j) + '_noise'
+            prefix = (
+                opt.name + "_" + str(opt.load_pretrain_epoch) + "_" + str(j) + "_noise"
+            )
             create_and_save(z, modelG, opt, True, prefix)
 
-            prefix = opt.name + '_' + str(
-                opt.load_pretrain_epoch) + '_' + str(j)
+            prefix = opt.name + "_" + str(opt.load_pretrain_epoch) + "_" + str(j)
             create_and_save(z, modelG, opt, False, prefix)
 
-        print(opt.name + ' Finished!')
+        print(opt.name + " Finished!")
 
 
 if __name__ == "__main__":

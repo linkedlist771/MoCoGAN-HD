@@ -6,12 +6,13 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 import torch.utils.data
 
 from .video_dataset import VideoDataset
 
 
-class VideoDatasetDataLoader():
+class VideoDatasetDataLoader:
     def __init__(self, opt):
         self.opt = opt
         dataset = VideoDataset(opt)
@@ -19,7 +20,8 @@ class VideoDatasetDataLoader():
 
         if opt.distributed:
             self.train_sampler = torch.utils.data.distributed.DistributedSampler(
-                self.dataset)
+                self.dataset
+            )
         else:
             self.train_sampler = None
 
@@ -30,7 +32,8 @@ class VideoDatasetDataLoader():
             num_workers=2,
             pin_memory=True,
             sampler=self.train_sampler,
-            drop_last=True)
+            drop_last=True,
+        )
 
     def load_data(self):
         return self.dataloader

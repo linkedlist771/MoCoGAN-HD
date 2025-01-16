@@ -6,6 +6,7 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 import numpy as np
 
 import torch
@@ -15,13 +16,15 @@ import torch.optim as optim
 
 
 class RNNModule(nn.Module):
-    def __init__(self,
-                 pca_comp_path,
-                 pca_stdev_path,
-                 z_dim=512,
-                 h_dim=384,
-                 n_pca=384,
-                 w_residual=0.2):
+    def __init__(
+        self,
+        pca_comp_path,
+        pca_stdev_path,
+        z_dim=512,
+        h_dim=384,
+        n_pca=384,
+        w_residual=0.2,
+    ):
         super(RNNModule, self).__init__()
         pca_comp = np.load(pca_comp_path)
         pca_stdev = np.load(pca_stdev_path)
@@ -44,23 +47,25 @@ class RNNModule(nn.Module):
         self.init_weights()
 
     def init_optim(self, lr, beta1, beta2):
-        self.optim = optim.Adam(params=self.parameters(),
-                                lr=lr,
-                                betas=(beta1, beta2),
-                                weight_decay=0,
-                                eps=1e-8)
+        self.optim = optim.Adam(
+            params=self.parameters(),
+            lr=lr,
+            betas=(beta1, beta2),
+            weight_decay=0,
+            eps=1e-8,
+        )
 
     def init_weights(self):
         for module in self.modules():
-            if (isinstance(module, nn.LSTMCell)):
+            if isinstance(module, nn.LSTMCell):
                 for name, param in module.named_parameters():
-                    if ('weight_ih' in name) or ('weight_hh' in name):
+                    if ("weight_ih" in name) or ("weight_hh" in name):
                         mul = param.shape[0] // 4
                         for idx in range(4):
-                            init.orthogonal_(param[idx * mul:(idx + 1) * mul])
-                    elif 'bias' in name:
+                            init.orthogonal_(param[idx * mul : (idx + 1) * mul])
+                    elif "bias" in name:
                         param.data.fill_(0)
-            if (isinstance(module, nn.Linear)):
+            if isinstance(module, nn.Linear):
                 init.orthogonal_(module.weight)
 
         nn.init.normal_(self.w, std=0.02)

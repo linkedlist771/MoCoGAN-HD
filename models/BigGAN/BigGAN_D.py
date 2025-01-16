@@ -26,20 +26,22 @@ class DBlock(nn.Module):
         self.activation = activation
         self.downsample = downsample
 
-        self.conv1 = self.which_conv(in_channels=self.in_channels,
-                                     out_channels=self.hidden_channels)
+        self.conv1 = self.which_conv(
+            in_channels=self.in_channels, out_channels=self.hidden_channels
+        )
         self.conv1 = spectral_norm(self.conv1)
-        self.conv2 = self.which_conv(in_channels=self.hidden_channels,
-                                     out_channels=self.out_channels)
+        self.conv2 = self.which_conv(
+            in_channels=self.hidden_channels, out_channels=self.out_channels
+        )
         self.conv2 = spectral_norm(self.conv2)
 
-        self.learnable_sc = True if (
-            in_channels != out_channels) or downsample else False
+        self.learnable_sc = (
+            True if (in_channels != out_channels) or downsample else False
+        )
         if self.learnable_sc:
-            self.conv_sc = nn.Conv2d(in_channels,
-                                     out_channels,
-                                     kernel_size=1,
-                                     padding=0)
+            self.conv_sc = nn.Conv2d(
+                in_channels, out_channels, kernel_size=1, padding=0
+            )
             self.conv_sc = spectral_norm(self.conv_sc)
 
     def shortcut(self, x):
@@ -71,43 +73,45 @@ class DBlock(nn.Module):
 def D_arch(ch=32):
     arch = {}
     arch[256] = {
-        'in_channels': [3] + [ch * item for item in [1, 2, 4, 8, 8, 16]],
-        'out_channels': [item * ch for item in [1, 2, 4, 8, 8, 16, 16]],
-        'downsample': [True] * 6 + [False],
-        'resolution': [128, 64, 32, 16, 8, 4, 4],
+        "in_channels": [3] + [ch * item for item in [1, 2, 4, 8, 8, 16]],
+        "out_channels": [item * ch for item in [1, 2, 4, 8, 8, 16, 16]],
+        "downsample": [True] * 6 + [False],
+        "resolution": [128, 64, 32, 16, 8, 4, 4],
     }
     arch[128] = {
-        'in_channels': [3] + [ch * item for item in [1, 2, 4, 8, 16]],
-        'out_channels': [item * ch for item in [1, 2, 4, 8, 16, 16]],
-        'downsample': [True] * 5 + [False],
-        'resolution': [64, 32, 16, 8, 4, 4],
+        "in_channels": [3] + [ch * item for item in [1, 2, 4, 8, 16]],
+        "out_channels": [item * ch for item in [1, 2, 4, 8, 16, 16]],
+        "downsample": [True] * 5 + [False],
+        "resolution": [64, 32, 16, 8, 4, 4],
     }
     arch[64] = {
-        'in_channels': [3] + [ch * item for item in [1, 2, 4, 8]],
-        'out_channels': [item * ch for item in [1, 2, 4, 8, 16]],
-        'downsample': [True] * 4 + [False],
-        'resolution': [32, 16, 8, 4, 4],
+        "in_channels": [3] + [ch * item for item in [1, 2, 4, 8]],
+        "out_channels": [item * ch for item in [1, 2, 4, 8, 16]],
+        "downsample": [True] * 4 + [False],
+        "resolution": [32, 16, 8, 4, 4],
     }
     arch[32] = {
-        'in_channels': [3] + [item * ch for item in [4, 4, 4]],
-        'out_channels': [item * ch for item in [4, 4, 4, 4]],
-        'downsample': [True, True, False, False],
-        'resolution': [16, 16, 16, 16],
+        "in_channels": [3] + [item * ch for item in [4, 4, 4]],
+        "out_channels": [item * ch for item in [4, 4, 4, 4]],
+        "downsample": [True, True, False, False],
+        "resolution": [16, 16, 16, 16],
     }
     return arch
 
 
 class Discriminator(nn.Module):
-    def __init__(self,
-                 D_ch=96,
-                 D_wide=True,
-                 resolution=128,
-                 D_activation=nn.ReLU(inplace=False),
-                 output_dim=1,
-                 proj_dim=256,
-                 D_init='ortho',
-                 skip_init=False,
-                 D_param='SN'):
+    def __init__(
+        self,
+        D_ch=96,
+        D_wide=True,
+        resolution=128,
+        D_activation=nn.ReLU(inplace=False),
+        output_dim=1,
+        proj_dim=256,
+        D_init="ortho",
+        skip_init=False,
+        D_param="SN",
+    ):
         super(Discriminator, self).__init__()
         self.ch = D_ch
         self.D_wide = D_wide
@@ -116,27 +120,28 @@ class Discriminator(nn.Module):
 
         self.arch = D_arch(self.ch)[resolution]
 
-        self.which_conv = functools.partial(nn.Conv2d,
-                                            kernel_size=3,
-                                            padding=1)
+        self.which_conv = functools.partial(nn.Conv2d, kernel_size=3, padding=1)
 
         self.blocks = []
-        for index in range(len(self.arch['out_channels'])):
-            self.blocks += [[
-                DBlock(in_channels=self.arch['in_channels'][index],
-                       out_channels=self.arch['out_channels'][index],
-                       which_conv=self.which_conv,
-                       wide=self.D_wide,
-                       activation=self.activation,
-                       preactivation=(index > 0),
-                       downsample=(nn.AvgPool2d(2) if
-                                   self.arch['downsample'][index] else None))
-            ]]
-        self.blocks = nn.ModuleList(
-            [nn.ModuleList(block) for block in self.blocks])
+        for index in range(len(self.arch["out_channels"])):
+            self.blocks += [
+                [
+                    DBlock(
+                        in_channels=self.arch["in_channels"][index],
+                        out_channels=self.arch["out_channels"][index],
+                        which_conv=self.which_conv,
+                        wide=self.D_wide,
+                        activation=self.activation,
+                        preactivation=(index > 0),
+                        downsample=(
+                            nn.AvgPool2d(2) if self.arch["downsample"][index] else None
+                        ),
+                    )
+                ]
+            ]
+        self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
-        self.proj0 = spectral_norm(
-            nn.Linear(self.arch['out_channels'][-1], proj_dim))
+        self.proj0 = spectral_norm(nn.Linear(self.arch["out_channels"][-1], proj_dim))
         self.proj1 = spectral_norm(nn.Linear(proj_dim, proj_dim))
         self.proj2 = spectral_norm(nn.Linear(proj_dim, proj_dim))
 
@@ -148,20 +153,23 @@ class Discriminator(nn.Module):
     def init_weights(self):
         self.param_count = 0
         for module in self.modules():
-            if (isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear)
-                    or isinstance(module, nn.Embedding)):
-                if self.init == 'ortho':
+            if (
+                isinstance(module, nn.Conv2d)
+                or isinstance(module, nn.Linear)
+                or isinstance(module, nn.Embedding)
+            ):
+                if self.init == "ortho":
                     init.orthogonal_(module.weight)
-                elif self.init == 'N02':
+                elif self.init == "N02":
                     init.normal_(module.weight, 0, 0.02)
-                elif self.init in ['glorot', 'xavier']:
+                elif self.init in ["glorot", "xavier"]:
                     init.xavier_uniform_(module.weight)
                 else:
-                    print('Init style not recognized...')
+                    print("Init style not recognized...")
                 self.param_count += sum(
-                    [p.data.nelement() for p in module.parameters()])
-        print('Param count for D'
-              's initialized parameters: %d' % self.param_count)
+                    [p.data.nelement() for p in module.parameters()]
+                )
+        print("Param count for D" "s initialized parameters: %d" % self.param_count)
 
     def forward(self, x, proj_only=False):
         h = x

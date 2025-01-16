@@ -6,6 +6,7 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 import os.path
 import random
 
@@ -15,7 +16,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 
-IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG']
+IMG_EXTENSIONS = [".jpg", ".JPG", ".jpeg", ".JPEG", ".png", ".PNG"]
 
 
 def is_image_file(filename):
@@ -36,10 +37,9 @@ class VideoDataset(data.Dataset):
         frame_list = os.walk(dataroot)
         for _, meta in enumerate(frame_list):
             root = meta[0]
-            frames = sorted(meta[2], key=lambda item: int(item.split('.')[0]))
+            frames = sorted(meta[2], key=lambda item: int(item.split(".")[0]))
             frames = [
-                os.path.join(root, item) for item in frames
-                if is_image_file(item)
+                os.path.join(root, item) for item in frames if is_image_file(item)
             ]
             if len(frames) > self.opt.n_frames_G * self.opt.time_step:
                 data_all.append(frames)
@@ -54,7 +54,7 @@ class VideoDataset(data.Dataset):
     def __getitem__(self, index):
         torch.cuda.empty_cache()  # If using GPU
         batch_data = self.getTensor(index)
-        return {'real_img': batch_data}
+        return {"real_img": batch_data}
 
     def getTensor(self, index):
         n_frames = self.opt.n_frames_G
@@ -65,7 +65,7 @@ class VideoDataset(data.Dataset):
         n_frames_interval = n_frames * self.opt.time_step
         start_idx = random.randint(0, video_len - 1 - n_frames_interval)
         img = Image.open(video[0])
-        img = img.convert('RGB') # conver the gray image to rgb
+        img = img.convert("RGB")  # conver the gray image to rgb
         h, w = img.height, img.width
 
         if h > w:
@@ -76,20 +76,20 @@ class VideoDataset(data.Dataset):
             cropsize = (half, 0, half + h, h)
 
         images = []
-        for i in range(start_idx, start_idx + n_frames_interval,
-                       self.opt.time_step):
+        for i in range(start_idx, start_idx + n_frames_interval, self.opt.time_step):
             path = video[i]
             img = Image.open(path)
-            img = img.convert('RGB')
+            img = img.convert("RGB")
 
             if h != w:
                 img = img.crop(cropsize)
 
             img = img.resize(
                 (self.opt.video_frame_size, self.opt.video_frame_size),
-                Image.Resampling.LANCZOS)
+                Image.Resampling.LANCZOS,
+            )
             img = np.asarray(img, dtype=np.float32)
-            img /= 255.
+            img /= 255.0
             img_tensor = preprocess(img).unsqueeze(0)
             images.append(img_tensor)
 
@@ -100,4 +100,4 @@ class VideoDataset(data.Dataset):
         return self.video_num
 
     def name(self):
-        return 'VideoDataset'
+        return "VideoDataset"

@@ -30,37 +30,31 @@ def power_iteration(W, u_, update=True, eps=1e-12):
 
 
 class SN(object):
-    def __init__(self,
-                 num_svs,
-                 num_itrs,
-                 num_outputs,
-                 transpose=False,
-                 eps=1e-12):
+    def __init__(self, num_svs, num_itrs, num_outputs, transpose=False, eps=1e-12):
         self.num_itrs = num_itrs
         self.num_svs = num_svs
         self.transpose = transpose
         self.eps = eps
         for i in range(self.num_svs):
-            self.register_buffer('u%d' % i, torch.randn(1, num_outputs))
-            self.register_buffer('sv%d' % i, torch.ones(1))
+            self.register_buffer("u%d" % i, torch.randn(1, num_outputs))
+            self.register_buffer("sv%d" % i, torch.ones(1))
 
     @property
     def u(self):
-        return [getattr(self, 'u%d' % i) for i in range(self.num_svs)]
+        return [getattr(self, "u%d" % i) for i in range(self.num_svs)]
 
     @property
     def sv(self):
-        return [getattr(self, 'sv%d' % i) for i in range(self.num_svs)]
+        return [getattr(self, "sv%d" % i) for i in range(self.num_svs)]
 
     def W_(self):
         W_mat = self.weight.view(self.weight.size(0), -1)
         if self.transpose:
             W_mat = W_mat.t()
         for _ in range(self.num_itrs):
-            svs, us, vs = power_iteration(W_mat,
-                                          self.u,
-                                          update=self.training,
-                                          eps=self.eps)
+            svs, us, vs = power_iteration(
+                W_mat, self.u, update=self.training, eps=self.eps
+            )
         if self.training:
             with torch.no_grad():
                 for i, sv in enumerate(svs):
@@ -69,35 +63,49 @@ class SN(object):
 
 
 class SNConv2d(nn.Conv2d, SN):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 stride=1,
-                 padding=0,
-                 dilation=1,
-                 groups=1,
-                 bias=True,
-                 num_svs=1,
-                 num_itrs=1,
-                 eps=1e-12):
-        nn.Conv2d.__init__(self, in_channels, out_channels, kernel_size,
-                           stride, padding, dilation, groups, bias)
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        dilation=1,
+        groups=1,
+        bias=True,
+        num_svs=1,
+        num_itrs=1,
+        eps=1e-12,
+    ):
+        nn.Conv2d.__init__(
+            self,
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            groups,
+            bias,
+        )
         SN.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
 
     def forward(self, x):
-        return F.conv2d(x, self.W_(), self.bias, self.stride, self.padding,
-                        self.dilation, self.groups)
+        return F.conv2d(
+            x,
+            self.W_(),
+            self.bias,
+            self.stride,
+            self.padding,
+            self.dilation,
+            self.groups,
+        )
 
 
 class SNLinear(nn.Linear, SN):
-    def __init__(self,
-                 in_features,
-                 out_features,
-                 bias=True,
-                 num_svs=1,
-                 num_itrs=1,
-                 eps=1e-12):
+    def __init__(
+        self, in_features, out_features, bias=True, num_svs=1, num_itrs=1, eps=1e-12
+    ):
         nn.Linear.__init__(self, in_features, out_features, bias)
         SN.__init__(self, num_svs, num_itrs, out_features, eps=eps)
 
@@ -127,13 +135,13 @@ class DBlock(nn.Module):
         # Conv layers
         self.conv1 = self.which_conv(self.in_channels, self.hidden_channels)
         self.conv2 = self.which_conv(self.hidden_channels, self.out_channels)
-        self.learnable_sc = True if (
-            in_channels != out_channels) or downsample else False
+        self.learnable_sc = (
+            True if (in_channels != out_channels) or downsample else False
+        )
         if self.learnable_sc:
-            self.conv_sc = self.which_conv(in_channels,
-                                           out_channels,
-                                           kernel_size=1,
-                                           padding=0)
+            self.conv_sc = self.which_conv(
+                in_channels, out_channels, kernel_size=1, padding=0
+            )
 
     def shortcut(self, x):
         if self.preactivation:

@@ -6,6 +6,7 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 import random
 import numpy as np
 
@@ -86,14 +87,14 @@ def warp_with_cutout_real(x, max_ratio=0.25):
     w_s = round(w_start * (w - 1) - 0.5)
     length = round(h * ratio - 0.5)
 
-    m[:, h_s:h_s + length, w_s:w_s + length] = 0.
+    m[:, h_s : h_s + length, w_s : w_s + length] = 0.0
     m = torch.from_numpy(m).cuda(x.get_device())
     out = x * m
     return out.unsqueeze(0)
 
 
 def warp_with_affine(x, angle=180, trans=0.1, scale=0.05):
-    angle = np.pi * angle / 180.
+    angle = np.pi * angle / 180.0
 
     pa = torch.FloatTensor(4)
     th = torch.FloatTensor(2, 3)
@@ -101,7 +102,7 @@ def warp_with_affine(x, angle=180, trans=0.1, scale=0.05):
     pa[0].uniform_(-angle, angle)
     pa[1].uniform_(-trans, trans)
     pa[2].uniform_(-trans, trans)
-    pa[3].uniform_(1. - scale, 1. + scale)
+    pa[3].uniform_(1.0 - scale, 1.0 + scale)
 
     th[0][0] = pa[3] * torch.cos(pa[0])
     th[0][1] = pa[3] * torch.sin(-pa[0])
@@ -148,16 +149,16 @@ def D_step(opt, modelG, modelD_img, modelD_3d, x, z):
     z.data.normal_()
 
     x_fake, _, _ = modelG([z], opt.n_frames_G, use_noise=True)
-    x_fake = x_fake.view(opt.batchSize, opt.n_frames_G, opt.nc,
-                         opt.style_gan_size, opt.style_gan_size)
+    x_fake = x_fake.view(
+        opt.batchSize, opt.n_frames_G, opt.nc, opt.style_gan_size, opt.style_gan_size
+    )
     kernel_size = int(opt.style_gan_size / opt.video_frame_size)
     x_fake = F.avg_pool3d(x_fake, (1, kernel_size, kernel_size))
 
     x_in = x
     x_fake_in = x_fake
 
-    D_fake_3d = modelD_3d(flip_video(
-        torch.transpose(x_fake_in, 1, 2).detach()))
+    D_fake_3d = modelD_3d(flip_video(torch.transpose(x_fake_in, 1, 2).detach()))
     D_real_3d = modelD_3d(flip_video(torch.transpose(x_in, 1, 2)))
 
     criterionGAN = losses.Relativistic_Average_LSGAN()
@@ -167,8 +168,8 @@ def D_step(opt, modelG, modelD_img, modelD_3d, x, z):
     D_loss_3d = (D_loss_real_3d + D_loss_fake_3d) * 0.5
 
     loss_GP_3d = losses.compute_gradient_penalty_T(
-        torch.transpose(x_in, 1, 2), torch.transpose(x_fake_in, 1, 2),
-        modelD_3d, opt)
+        torch.transpose(x_in, 1, 2), torch.transpose(x_fake_in, 1, 2), modelD_3d, opt
+    )
     D_loss_3d += loss_GP_3d
 
     modelD_3d.module.optim.zero_grad()
@@ -189,10 +190,11 @@ def D_step(opt, modelG, modelD_img, modelD_3d, x, z):
     D_fake2, logits_fake2 = modelD_img(aug_fake2.detach())
 
     cntr_loss = modelD_img.module.get_cntr_loss_cross_domain(
-        logits_real, logits_real2, logits_fake, logits_fake2)
+        logits_real, logits_real2, logits_fake, logits_fake2
+    )
 
     D_loss_real, D_loss_fake = losses.loss_hinge_dis(D_fake, D_real)
-    D_loss = (D_loss_real + D_loss_fake) / 1. + 2. * cntr_loss
+    D_loss = (D_loss_real + D_loss_fake) / 1.0 + 2.0 * cntr_loss
 
     modelD_img.module.optim.zero_grad()
     D_loss.backward()
@@ -201,8 +203,13 @@ def D_step(opt, modelG, modelD_img, modelD_3d, x, z):
     with torch.no_grad():
         modelD_img.module._momentum_update_dis()
 
-    return D_loss_real.item(), D_loss_fake.item(), D_loss_real_3d.item(
-    ), D_loss_fake_3d.item(), cntr_loss.item()
+    return (
+        D_loss_real.item(),
+        D_loss_fake.item(),
+        D_loss_real_3d.item(),
+        D_loss_fake_3d.item(),
+        cntr_loss.item(),
+    )
 
 
 def G_step(opt, modelG, modelD_img, modelD_3d, x, z):
@@ -210,8 +217,9 @@ def G_step(opt, modelG, modelD_img, modelD_3d, x, z):
 
     x_fake, rand_in, rand_rec = modelG([z], opt.n_frames_G, use_noise=True)
     # 就是随机sample一个
-    x_fake = x_fake.view(opt.batchSize, opt.n_frames_G, 3, opt.style_gan_size,
-                         opt.style_gan_size)
+    x_fake = x_fake.view(
+        opt.batchSize, opt.n_frames_G, 3, opt.style_gan_size, opt.style_gan_size
+    )
     kernel_size = int(opt.style_gan_size / opt.video_frame_size)
     x_fake = F.avg_pool3d(x_fake, (1, kernel_size, kernel_size))
 
@@ -242,8 +250,10 @@ def G_step(opt, modelG, modelD_img, modelD_3d, x, z):
     D_fake_3d = modelD_3d(flip_video(torch.transpose(x_fake_in, 1, 2)))
 
     criterionGAN = losses.Relativistic_Average_LSGAN()
-    G_loss_3d = (criterionGAN(D_fake_3d, D_real_3d, True) +
-                 criterionGAN(D_real_3d, D_fake_3d, False)) * 0.5
+    G_loss_3d = (
+        criterionGAN(D_fake_3d, D_real_3d, True)
+        + criterionGAN(D_real_3d, D_fake_3d, False)
+    ) * 0.5
 
     G_loss = G_loss_3d + G_loss_2d + opt.w_match * l_match + l_mutual
 
@@ -255,22 +265,38 @@ def G_step(opt, modelG, modelD_img, modelD_3d, x, z):
 
 
 def GD_step(opt, modelG, modelD_img, modelD_3d, data, x, z):
-    x.data.copy_(data['real_img'])
+    x.data.copy_(data["real_img"])
 
     for i in range(opt.G_step):
-        G_loss, G_loss_3d, l_match, l_mutual = G_step(opt, modelG, modelD_img,
-                                                      modelD_3d, x, z)
+        G_loss, G_loss_3d, l_match, l_mutual = G_step(
+            opt, modelG, modelD_img, modelD_3d, x, z
+        )
 
     D_loss_real, D_loss_fake, D_loss_real_3d, D_loss_fake_3d, cntr_loss_D = D_step(
-        opt, modelG, modelD_img, modelD_3d, x, z)
+        opt, modelG, modelD_img, modelD_3d, x, z
+    )
 
     loss_names = [
-        'D_real', 'D_fake', 'D_real_3d', 'D_fake_3d', 'cntr_D', 'G', 'G_3d',
-        'l_match', 'l_mutual'
+        "D_real",
+        "D_fake",
+        "D_real_3d",
+        "D_fake_3d",
+        "cntr_D",
+        "G",
+        "G_3d",
+        "l_match",
+        "l_mutual",
     ]
 
     loss_all = [
-        D_loss_real, D_loss_fake, D_loss_real_3d, D_loss_fake_3d, cntr_loss_D,
-        G_loss, G_loss_3d, l_match, l_mutual
+        D_loss_real,
+        D_loss_fake,
+        D_loss_real_3d,
+        D_loss_fake_3d,
+        cntr_loss_D,
+        G_loss,
+        G_loss_3d,
+        l_match,
+        l_mutual,
     ]
     return loss_all, loss_names

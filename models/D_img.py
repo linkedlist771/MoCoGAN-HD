@@ -6,6 +6,7 @@ Such code is provided as-is, without warranty of any kind, express or implied, i
 title, fitness for a particular purpose, non-infringement, or that such code is free of defects, errors or viruses.
 In no event will Snap Inc. be liable for any damages or losses of any kind arising from the sample code or your use thereof.
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,8 +33,7 @@ def concat_all_gather(tensor):
     *** Warning ***: torch.distributed.all_gather has no gradient.
     """
     tensors_gather = [
-        torch.ones_like(tensor)
-        for _ in range(torch.distributed.get_world_size())
+        torch.ones_like(tensor) for _ in range(torch.distributed.get_world_size())
     ]
     torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
 
@@ -47,10 +47,12 @@ class ModelD_img(nn.Module):
 
         self.moco_m = opt.moco_m
 
-        self.modelD = BigGAN_D.Discriminator(resolution=opt.video_frame_size,
-                                             proj_dim=opt.l_len)
+        self.modelD = BigGAN_D.Discriminator(
+            resolution=opt.video_frame_size, proj_dim=opt.l_len
+        )
         self.modelD_ema = BigGAN_D.Discriminator(
-            resolution=opt.video_frame_size, proj_dim=opt.l_len)
+            resolution=opt.video_frame_size, proj_dim=opt.l_len
+        )
 
         self.register_buffer("q_real", torch.randn(opt.q_len, opt.l_len))
         self.q_real = F.normalize(self.q_real, dim=0)
@@ -64,25 +66,27 @@ class ModelD_img(nn.Module):
         self.T = opt.moco_t
         self.batchSize = opt.batchSize
 
-        for param, param_ema in zip(self.modelD.parameters(),
-                                    self.modelD_ema.parameters()):
+        for param, param_ema in zip(
+            self.modelD.parameters(), self.modelD_ema.parameters()
+        ):
             param_ema.data.copy_(param.data)
             param_ema.requires_grad = False
 
-        self.optim = optim.Adam(params=self.modelD.parameters(),
-                                lr=opt.lr,
-                                betas=(D_B1, D_B2),
-                                weight_decay=0,
-                                eps=adam_eps)
+        self.optim = optim.Adam(
+            params=self.modelD.parameters(),
+            lr=opt.lr,
+            betas=(D_B1, D_B2),
+            weight_decay=0,
+            eps=adam_eps,
+        )
 
     @torch.no_grad()
     def _momentum_update_dis(self):
         """
         Momentum update of the discriminator
         """
-        for p, p_ema in zip(self.modelD.parameters(),
-                            self.modelD_ema.parameters()):
-            p_ema.data = p_ema.data * self.moco_m + p.data * (1. - self.moco_m)
+        for p, p_ema in zip(self.modelD.parameters(), self.modelD_ema.parameters()):
+            p_ema.data = p_ema.data * self.moco_m + p.data * (1.0 - self.moco_m)
 
     @torch.no_grad()
     def update_memory_bank(self, logits_real, logits_fake):
@@ -92,50 +96,49 @@ class ModelD_img(nn.Module):
         batch_size_t = logits_real.shape[0]
 
         ptr = int(self.q_ptr)
-        self.q_real[ptr:ptr + batch_size_t, :] = logits_real
-        self.q_fake[ptr:ptr + batch_size_t, :] = logits_fake
+        self.q_real[ptr : ptr + batch_size_t, :] = logits_real
+        self.q_fake[ptr : ptr + batch_size_t, :] = logits_fake
         ptr = (ptr + batch_size_t) % self.q_len
         self.q_ptr[0] = ptr
 
-    def get_cntr_loss_cross_domain(self, logits_real, logits_real2,
-                                   logits_fake, logits_fake2):
+    def get_cntr_loss_cross_domain(
+        self, logits_real, logits_real2, logits_fake, logits_fake2
+    ):
         T = self.T
         cos_sim_real = pair_cos_sim(
             torch.cat((logits_real, logits_real2), dim=0),
             torch.cat(
-                (logits_real, logits_real2, self.q_real[:self.q_len].detach()),
-                dim=0))
+                (logits_real, logits_real2, self.q_real[: self.q_len].detach()), dim=0
+            ),
+        )
         m = torch.ones_like(cos_sim_real) / T
-        m.fill_diagonal_(0.)
+        m.fill_diagonal_(0.0)
 
         cos_sim_reg_real = F.softmax(cos_sim_real * m)
 
         cos_sim_fake = pair_cos_sim(
             torch.cat((logits_fake, logits_fake2), dim=0),
             torch.cat(
-                (logits_fake, logits_fake2, self.q_fake[:self.q_len].detach()),
-                dim=0))
+                (logits_fake, logits_fake2, self.q_fake[: self.q_len].detach()), dim=0
+            ),
+        )
         cos_sim_reg_fake = F.softmax(cos_sim_fake * m)
 
-        cntr_loss_real = 0.
+        cntr_loss_real = 0.0
 
         for i in range(self.batchSize):
-            cntr_loss_real += -torch.log(
-                cos_sim_reg_real[i][i + self.batchSize])
-            cntr_loss_real += -torch.log(
-                cos_sim_reg_real[i + self.batchSize][i])
+            cntr_loss_real += -torch.log(cos_sim_reg_real[i][i + self.batchSize])
+            cntr_loss_real += -torch.log(cos_sim_reg_real[i + self.batchSize][i])
 
-        cntr_loss_real = cntr_loss_real / (2. * self.batchSize)
+        cntr_loss_real = cntr_loss_real / (2.0 * self.batchSize)
 
-        cntr_loss_fake = 0.
+        cntr_loss_fake = 0.0
 
         for i in range(self.batchSize):
-            cntr_loss_fake += -torch.log(
-                cos_sim_reg_fake[i][i + self.batchSize])
-            cntr_loss_fake += -torch.log(
-                cos_sim_reg_fake[i + self.batchSize][i])
+            cntr_loss_fake += -torch.log(cos_sim_reg_fake[i][i + self.batchSize])
+            cntr_loss_fake += -torch.log(cos_sim_reg_fake[i + self.batchSize][i])
 
-        cntr_loss_fake = cntr_loss_fake / (2. * self.batchSize)
+        cntr_loss_fake = cntr_loss_fake / (2.0 * self.batchSize)
 
         cntr_loss = cntr_loss_real + cntr_loss_fake
         return cntr_loss
