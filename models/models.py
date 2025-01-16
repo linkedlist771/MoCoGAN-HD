@@ -11,7 +11,7 @@ import os
 import torch
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
-
+from loguru import logger
 from .rnn import RNNModule
 from models.stylegan2 import model
 
@@ -48,7 +48,13 @@ def create_model(opt):
     modelG = model.Generator(size=opt.style_gan_size,
                              style_dim=opt.latent_dimension,
                              n_mlp=opt.n_mlp)
-    modelG.load_state_dict(ckpt['g_ema'], strict=False)
+    # another way: check it out:
+    try:
+        modelG.load_state_dict(ckpt['g_ema'], strict=False)
+    except Exception as e:
+        logger.error(f"load from g_ema failed, try to load directly.")
+        modelG.load_state_dict(ckpt, strict=False)
+
     modelG.eval()
 
     for p in modelG.parameters():
