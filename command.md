@@ -50,6 +50,38 @@ CUDA_VISIBLE_DEVICES=3  nohup python -W ignore train.py --name ucf_101 \
   --total_epoch 100 > $(date +%m_%d).log 2>&1 &
 ```
 
+- train on pretrained stylegan2-models:
+```bash
+CUDA_VISIBLE_DEVICES=3 python -W ignore train.py --name ucf_101 \
+  --time_step 2 \
+  --lr 0.0001 \
+  --save_pca_path pca_stats/ucf_101 \
+  --latent_dimension 512 \
+  --dataroot  data/deposition_data \
+  --checkpoints_dir checkpoints \
+  --img_g_weights /home/gpu02/dingli/data-efficient-gans-baseline/snapshot.pt  \
+  --multiprocessing_distributed --world_size 1 --rank 0 \
+  --batchSize 8 \
+  --workers 1 \
+  --style_gan_size 256 \
+  --total_epoch 100 
+```
+```bash
+CUDA_VISIBLE_DEVICES=3  nohup python -W ignore train.py --name ucf_101 \
+  --time_step 2 \
+  --lr 0.0001 \
+  --save_pca_path pca_stats/ucf_101 \
+  --latent_dimension 512 \
+  --dataroot  data/deposition_data \
+  --checkpoints_dir checkpoints \
+  --img_g_weights /home/gpu02/dingli/data-efficient-gans-baseline/snapshot.pt  \
+  --multiprocessing_distributed --world_size 1 --rank 0 \
+  --batchSize 8 \
+  --workers 1 \
+  --style_gan_size 256 \
+  --total_epoch 100 > $(date +%m_%d).log 2>&1 &
+```
+
 3. inference:
 ```bash
 python -W ignore evaluate.py \
@@ -62,3 +94,16 @@ python -W ignore evaluate.py \
   --results results/ucf_101 \
   --num_test_videos 10
 ```
+
+CUDA_VISIBLE_DEVICES=2
+python -W ignore evaluate.py \
+  --save_pca_path pca_stats/ucf_101 \
+  --latent_dimension 512 \
+  --style_gan_size 256 \
+  --img_g_weights /home/gpu02/dingli/data-efficient-gans-baseline/snapshot.pt  \
+  --load_pretrain_path checkpoints/ucf_101_20250116_061449 \
+  --load_pretrain_epoch 1 \
+  --results results/ucf_101 \
+  --num_test_videos 10
+
+#

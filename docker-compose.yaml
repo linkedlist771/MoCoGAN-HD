@@ -6,6 +6,7 @@ services:
     network_mode: "host"    # 添加这行来使用主机网络
     command: tail -f /dev/null
     volumes:
+      - /home/gpu02/dingli:/home/gpu02/dingli
       - ./:/workspace
     deploy:
       resources:
