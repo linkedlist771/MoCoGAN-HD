@@ -1,18 +1,25 @@
 import torch
 import argparse
 
+
 # 解析命令行参数
 def parse_args():
     parser = argparse.ArgumentParser(description="Compare two model shapes")
-    parser.add_argument('--model0', type=str, required=True, help='Path to the first model (.pt) file')
-    parser.add_argument('--model1', type=str, required=True, help='Path to the second model (.pt) file')
+    parser.add_argument(
+        "--model0", type=str, required=True, help="Path to the first model (.pt) file"
+    )
+    parser.add_argument(
+        "--model1", type=str, required=True, help="Path to the second model (.pt) file"
+    )
     return parser.parse_args()
+
 
 # 加载并打印模型结构
 def print_model_shapes(model, model_name):
     print(f"Shapes of layers in {model_name}:")
     for name, param in model.items():
         print(f"{name}: {param.shape}")
+
 
 # 主程序
 def main():
@@ -30,6 +37,7 @@ def main():
     print_model_shapes(model_1, args.model0)
     print(f"model_2")
     print_model_shapes(model_2, args.model1)
+
 
 if __name__ == "__main__":
     main()
