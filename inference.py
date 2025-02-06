@@ -25,6 +25,12 @@ class InferenceOptions(TestOptions):
             required=True,
             help="input directory",
         )
+        self.parser.add_argument(
+            "--split_ratio",
+            type=float,
+            default=0.9,
+            help="Ratio of training data to total data",
+        )
 
 def test():
 
@@ -42,7 +48,9 @@ def test():
 
     with torch.no_grad():
         # Add tqdm for the main directory iteration
-        for sub_dir in tqdm.tqdm(list(real_images_dir.iterdir()), desc="Processing directories"):
+        sub_dirs = [d for d in real_images_dir.iterdir() if d.is_dir()]
+        val_sub_dirs = sub_dirs[:int(len(sub_dirs) * opt.split_ratio)]
+        for sub_dir in tqdm.tqdm(val_sub_dirs, desc="Processing directories"):
             if sub_dir.is_dir():
                 images_paths = list(sub_dir.glob("*.png"))  # 只获取PNG文件
                 images_number = len(images_paths)
