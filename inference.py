@@ -49,28 +49,34 @@ def test():
     with torch.no_grad():
         # Add tqdm for the main directory iteration
         sub_dirs = [d for d in real_images_dir.iterdir() if d.is_dir()]
-        val_sub_dirs = sub_dirs[:int(len(sub_dirs) * opt.split_ratio)]
+        val_sub_dirs = sub_dirs[int(len(sub_dirs) * opt.split_ratio):]
         for sub_dir in tqdm.tqdm(val_sub_dirs, desc="Processing directories"):
             if sub_dir.is_dir():
                 images_paths = list(sub_dir.glob("*.png"))  # 只获取PNG文件
+                images_paths = sort_by_file_name_int(images_paths)
+                # is this image_numer to large?
                 images_number = len(images_paths)
                 
-                z.data.normal_()
-                x_fake, _, _ = modelG(
-                    styles=[z],
-                    n_frame=images_number,
-                    use_noise=False,
-                    interpolation=opt.interpolation,
-                )
-                x_fake = x_fake.view(1, -1, 3, opt.style_gan_size, opt.style_gan_size).data
-                x_fake = x_fake.clamp(-1, 1)
+                infer_images = []
+                while len(infer_images) < images_number:
+                    z.data.normal_()
+                    x_fake, _, _ = modelG(
+                        styles=[z],
+                        # n_frame=images_number,
+                        n_frame=opt.n_frames_G,
+                        use_noise=False,
+                        interpolation=opt.interpolation,
+                    )
+                    x_fake = x_fake.view(1, -1, 3, opt.style_gan_size, opt.style_gan_size).data
+                    x_fake = x_fake.clamp(-1, 1)
+                    infer_images.extend(x_fake[0])
 
                 save_sub_dir = os.path.join(opt.results_dir, sub_dir.stem)
                 # 创建保存图片的目录
                 os.makedirs(save_sub_dir, exist_ok=True)
 
                 # Add tqdm for the frame processing
-                for i, (frame, image_name) in enumerate(tqdm.tqdm(zip(x_fake[0], images_paths), 
+                for i, (frame, image_name) in enumerate(tqdm.tqdm(zip(infer_images, images_paths), 
                                                                 total=len(images_paths),
                                                                 desc=f"Processing frames in {sub_dir.stem}")):
                     frame = (frame + 1) / 2
