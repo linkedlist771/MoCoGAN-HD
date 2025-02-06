@@ -7,6 +7,8 @@ from pathlib import Path
 from options.test_options import TestOptions
 from models.models import create_model
 
+
+raise NotImplementedError("This infer")
 """
 需要传入一个这样的文件结构，然后根据对应的frame做constrain 然后作为输入，重新生成后面的subsequences。
 
@@ -28,6 +30,8 @@ input_constrained_frames_dir/
 1. 遍历每个sub_dir 然后以sub_dir 里面的每个constrain frame 来生成后续的frame.
 2. PS: 这里可以asset一下，这里面的sub_directory 的sep 是和传入的args是一样的。    
 """
+
+
 
 
 def sort_by_file_name_int(file_paths: list):
